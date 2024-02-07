@@ -6,18 +6,19 @@
 
 
 #define HEIGHT 50
-#define WIDTH 50
+#define WIDTH 100
 
 #define BACKGROUND '-'
 #define CELL '*'
 
-#define SPEED 10000 // Speed of getting new grid (milliseconds)
+#define SPEED 50 // Speed of getting new grid (milliseconds)
 
 typedef enum State {
     DEAD,
     ALIVE,
 } State;
-// We use an enum with value of ALIVE as 1 so that counting number of live neighbours and setting cell states become easier
+// We use an enum with value of ALIVE as 1 so that counting number of live neighbours and setting cell states become easier																		
+
 
 typedef struct Cell {
     State state;
@@ -37,10 +38,10 @@ Cell** createGrid(int rows, int cols) {
 void initGrid(Cell** grid, int rows, int cols) {
     for (size_t i = 0; i < rows; i++) {
         for (size_t j = 0; j < cols; j++) {
-            // if (rand() % 2 == 0 && rand() % 5 == 0) {
-            //     grid[i][j].state = ALIVE;
-            //     continue;
-            // }
+            if (rand() % 2 == 0 && rand() % 5 == 0) {
+                grid[i][j].state = ALIVE;
+                continue;
+            }
             grid[i][j].state = DEAD;
         }
     }
@@ -111,29 +112,45 @@ void nextGeneration(Cell** grid, int rows, int cols) {
 }
 // Updates the grid
 
-void sampleGrid(Cell** grid, int rows, int cols) {
-    for (size_t i = 0; i < rows; i++) {
-        for (size_t j = 0; j < cols; j++) {
-            grid[i][j].state = ALIVE;
-        }
-    }
-} // Modify the grid for samples
+void initGlider(Cell** grid, int rows, int cols, int offset) {
+    grid[offset + 0][offset + 1].state = ALIVE;
+    grid[offset + 1][offset + 2].state = ALIVE;
+    grid[offset + 2][offset + 0].state = ALIVE;
+    grid[offset + 2][offset + 1].state = ALIVE;
+    grid[offset + 2][offset + 2].state = ALIVE;
+}
 
-int main(void) {
+int main(int argc, char* argv[]) {
+    char* program = argv[0];
+
     srand(time(NULL)); // Seed the rand() function
+    system("clear");
 
     Cell** grid = createGrid(HEIGHT, WIDTH);
 
-    initGrid(grid, HEIGHT, WIDTH);
+    if (argc < 2) {
+        initGrid(grid, HEIGHT, WIDTH);
 
-    sampleGrid(grid, HEIGHT / 10, WIDTH / 10);
-
-    system("clear");
-    while (printGrid(grid, HEIGHT, WIDTH) != 0) {
-        usleep(SPEED * 1000); // In microseconds
-        nextGeneration(grid, HEIGHT, WIDTH);
-        system("clear");
+        while (printGrid(grid, HEIGHT, WIDTH) != 0) {
+            usleep(SPEED * 1000); // In microseconds
+            nextGeneration(grid, HEIGHT, WIDTH);
+            system("clear");
+        }
     }
+    
+    else {
+        if (strcmp(argv[1], "glider") == 0) {
+            initGlider(grid, HEIGHT, WIDTH, 0);
+            while (printGrid(grid, HEIGHT, WIDTH) != 0) {
+                usleep(SPEED * 1000); // In microseconds
+                nextGeneration(grid, HEIGHT, WIDTH);
+                system("clear");
+            }
+        }
 
-    printGrid(grid, HEIGHT, WIDTH);
+        else {
+            fprintf(stderr, "Usage: %s glider\n", program);
+            exit(1);
+        }
+    }
 }
