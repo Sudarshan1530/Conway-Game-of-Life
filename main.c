@@ -1,14 +1,17 @@
-#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h> // for memcpy
+#include <time.h> // for rand()
+#include <unistd.h> // for usleep()
 
-#define HEIGHT 25
-#define WIDTH 25
+
+#define HEIGHT 50
+#define WIDTH 50
 
 #define BACKGROUND '-'
 #define CELL '*'
 
-#define SPEED 50 // Speed of getting new grid (milliseconds)
+#define SPEED 10000 // Speed of getting new grid (milliseconds)
 
 typedef enum State {
     DEAD,
@@ -34,13 +37,17 @@ Cell** createGrid(int rows, int cols) {
 void initGrid(Cell** grid, int rows, int cols) {
     for (size_t i = 0; i < rows; i++) {
         for (size_t j = 0; j < cols; j++) {
+            // if (rand() % 2 == 0 && rand() % 5 == 0) {
+            //     grid[i][j].state = ALIVE;
+            //     continue;
+            // }
             grid[i][j].state = DEAD;
         }
     }
 
     return;
 }
-// initGrid returns a grid with all cells having default state dead (Basically a grid of all 0s)
+// initGrid returns a grid all cells having randomized values using the rand() function
 
 int printGrid(Cell** grid, int rows, int cols) {
     int aliveCount = 0;
@@ -63,6 +70,8 @@ int printGrid(Cell** grid, int rows, int cols) {
 // It returns the number of live cells
 
 void nextGeneration(Cell** grid, int rows, int cols) {
+    Cell** newGrid = createGrid(rows, cols);
+
     for (size_t i = 0; i < rows; i++) {
         for (size_t j = 0; j < cols; j++) {
             int aliveCount = 0;
@@ -71,29 +80,34 @@ void nextGeneration(Cell** grid, int rows, int cols) {
                     if (a == 0 && b == 0) { // Current cell is not a neighbour
                         continue;
                     }
-                    if ((i + a >= 0 && i + a < rows) && (j + b >= 0 && j + b < rows)) {
-                        if (grid[i + a][j + b].state == ALIVE) {
-                            aliveCount++;
-                        }
+                    // Implement wraparound
+                    int row = (i + a + rows) % rows;
+                    int col = (j + b + cols) % cols;
+
+                    if (grid[row][col].state == ALIVE) {
+                        aliveCount++;
                     }
                 }
             }
             switch (aliveCount) {
                 case 0:
                 case 1:
-                    grid[i][j].state = DEAD;
+                    newGrid[i][j].state = DEAD;
                     break;
                 case 2:
+                    newGrid[i][j] = grid[i][j];
                     break; // Dead stays dead, alive stays alive
                 case 3:
-                    grid[i][j].state = ALIVE;
+                    newGrid[i][j].state = ALIVE;
                     break;
                 default:
-                    grid[i][j].state = DEAD;
+                    newGrid[i][j].state = DEAD;
                     break;
             }
         }
     }
+    memcpy(grid, newGrid, (rows * cols * sizeof(Cell)));
+    
 }
 // Updates the grid
 
@@ -106,12 +120,15 @@ void sampleGrid(Cell** grid, int rows, int cols) {
 } // Modify the grid for samples
 
 int main(void) {
+    srand(time(NULL)); // Seed the rand() function
+
     Cell** grid = createGrid(HEIGHT, WIDTH);
 
     initGrid(grid, HEIGHT, WIDTH);
 
-    sampleGrid(grid, HEIGHT / 5, WIDTH / 5);
+    sampleGrid(grid, HEIGHT / 10, WIDTH / 10);
 
+    system("clear");
     while (printGrid(grid, HEIGHT, WIDTH) != 0) {
         usleep(SPEED * 1000); // In microseconds
         nextGeneration(grid, HEIGHT, WIDTH);
